@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Greek Verb Conjugation Trainer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+            line-height: 1.6;
+        }
+        .menu-container, .training-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .dropdown {
+            margin-bottom: 15px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .start-button, .back-button, .refresh-button {
+            color: white;
+            font-weight: bold;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .start-button {
+            background-color: #e74c3c;
+        }
+        .start-button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .start-button:hover:not(:disabled) {
+            background-color: #c0392b;
+        }
+        .back-button {
+            background-color: #6c757d;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+        .verb-info {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .conjugation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .person-input {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .person-input label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .person-input input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .feedback-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .training-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+        .refresh-button {
+            background-color: #3498db;
+        }
+        .refresh-button:hover {
+            background-color: #2980b9;
+        }
+
+        .top-nav {
+            margin-bottom: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 10px;
+        }
+        .top-nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            gap: 15px;
+        }
+        .top-nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+        }
+        .top-nav a:hover {
+            text-decoration: underline;
+        }
+
+        .instructions {
+            margin-bottom: 20px;
+        }
+        .instructions p {
+            margin: 0 0 10px 0;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        function App() {
+            const [verbDatabase, setVerbDatabase] = React.useState(null);
+            const [selectedCategory, setSelectedCategory] = React.useState("");
+            const [selectedTense, setSelectedTense] = React.useState("");
+            const [currentVerb, setCurrentVerb] = React.useState(null);
+            const [userConjugations, setUserConjugations] = React.useState({});
+            const [feedback, setFeedback] = React.useState(null);
+
+            const categories = [
+                { value: "1st_conjugation", label: "1-е спряжение (активный залог)" },
+                { value: "2nd_conjugation", label: "2-е спряжение (средне-пассивный залог)" },
+                { value: "irregular_verbs", label: "Неправильные глаголы" }
+            ];
+            const tenses = [
+                { value: "present", label: "Настоящее время" },
+                { value: "past", label: "Прошедшее (аорист)" },
+                { value: "future", label: "Будущее простое" }
+            ];
+
+            React.useEffect(() => {
+                fetch("verbs.json")
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error("Network response was not ok");
+                        }
+                        return response.json();
+                    })
+                    .then((data) => setVerbDatabase(data))
+                    .catch((error) => console.error("Error loading verb database:", error));
+            }, []);
+
+            const getVerbsInCategory = () => {
+                return (verbDatabase &&
+                    verbDatabase[selectedCategory] &&
+                    verbDatabase[selectedCategory][selectedTense]) 
+                    ? Object.keys(verbDatabase[selectedCategory][selectedTense]) 
+                    : [];
+            };
+
+            const startTraining = () => {
+                if (!verbDatabase) {
+                    alert("База данных глаголов не загружена. Попробуйте обновить страницу.");
+                    return;
+                }
+
+                const verbsInCategory = getVerbsInCategory();
+
+                if (verbsInCategory.length === 0) {
+                    alert("Для выбранной категории и времени глаголов не найдено.");
+                    return;
+                }
+
+                const randomVerb = verbsInCategory[Math.floor(Math.random() * verbsInCategory.length)];
+
+                setCurrentVerb(randomVerb);
+                setUserConjugations({});
+                setFeedback(null);
+            };
+
+            const handleConjugationChange = (person, value) => {
+                setUserConjugations((prev) => ({ ...prev, [person]: value }));
+            };
+
+            const checkConjugations = () => {
+                if (!verbDatabase) return;
+
+                const correctConjugations =
+                    verbDatabase[selectedCategory] &&
+                    verbDatabase[selectedCategory][selectedTense] &&
+                    verbDatabase[selectedCategory][selectedTense][currentVerb] &&
+                    verbDatabase[selectedCategory][selectedTense][currentVerb].conjugations
+                        ? verbDatabase[selectedCategory][selectedTense][currentVerb].conjugations
+                        : {};
+
+                const newFeedback = Object.keys(correctConjugations).map((person) => ({
+                    person,
+                    correct: (userConjugations[person] || "").trim() === correctConjugations[person],
+                    correctAnswer: correctConjugations[person],
+                }));
+
+                setFeedback(newFeedback);
+            };
+
+            const nextVerb = () => {
+                if (!verbDatabase) return;
+
+                const verbsInCategory = getVerbsInCategory();
+
+                if (verbsInCategory.length === 0) {
+                    alert("Для выбранной категории и времени глаголов не найдено.");
+                    return;
+                }
+
+                const availableVerbs = verbsInCategory.filter(v => v !== currentVerb);
+
+                if (availableVerbs.length === 0) {
+                    alert("Нет других глаголов в этой категории и времени.");
+                    return;
+                }
+
+                const randomVerb = availableVerbs[Math.floor(Math.random() * availableVerbs.length)];
+
+                setCurrentVerb(randomVerb);
+                setUserConjugations({});
+                setFeedback(null);
+            };
+
+            const returnToMenu = () => {
+                setCurrentVerb(null);
+                setSelectedCategory("");
+                setSelectedTense("");
+                setUserConjugations({});
+                setFeedback(null);
+            };
+
+            const selectedCategoryObj = categories.find(c => c.value === selectedCategory) || {label: ""};
+            const selectedTenseObj = tenses.find(t => t.value === selectedTense) || {label: ""};
+
+            return (
+                <div>
+                    <div className="top-nav">
+                        <ul>
+                            <li><a href="#" onClick={(e) => {e.preventDefault(); returnToMenu();}}>Главная</a></li>
+                            <li><a href="full_paradigm_1st.html" target="_blank">Полная парадигма 1-го спряжения</a></li>
+                            <li><a href="full_paradigm_1st_2.html" target="_blank">1-е спряжение (вариант 2)</a></li>
+                            <li><a href="full_paradigm_2nd.html" target="_blank">Полная парадигма 2-го спряжения</a></li>
+                            <li><a href="irregular_rules.html" target="_blank">Неправильные глаголы</a></li>
+                        </ul>
+                    </div>
+
+                    {!currentVerb ? (
+                        <div className="menu-container">
+                            <h1>Greek Verb Conjugation Trainer</h1>
+                            <div className="instructions">
+                                <p>Выберите категорию глаголов и время, затем нажмите <strong>Start Training</strong>.</p>
+                                <p>Вам будет предложен случайный глагол из выбранной категории и времени. Введите формы глагола по лицам и нажмите <strong>Check</strong>, чтобы проверить ваши ответы.</p>
+                                <p>Затем вы можете нажать <strong>Next</strong> для следующего глагола или вернуться в меню.</p>
+                            </div>
+                            <div className="dropdown">
+                                <label>Выберите категорию:</label>
+                                <select
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                >
+                                    <option value="">- Выберите категорию -</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.value} value={cat.value}>
+                                            {cat.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="note">Например, 1-е спряжение - обычно активный залог, 2-е - средне-пассивный и т.д.</div>
+                            </div>
+                            <div className="dropdown">
+                                <label>Выберите время:</label>
+                                <select
+                                    value={selectedTense}
+                                    onChange={(e) => setSelectedTense(e.target.value)}
+                                >
+                                    <option value="">- Выберите время -</option>
+                                    {tenses.map((tense) => (
+                                        <option key={tense.value} value={tense.value}>
+                                            {tense.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="note">Например, аорист - однократное прошедшее действие.</div>
+                            </div>
+                            <button
+                                className="start-button"
+                                disabled={!selectedCategory || !selectedTense}
+                                onClick={startTraining}
+                            >
+                                Start Training
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="training-container">
+                            <div className="verb-info">
+                                Глагол: {currentVerb}<br />
+                                ({selectedCategoryObj.label}, {selectedTenseObj.label})
+                            </div>
+                            <p>Введите правильные формы для каждого лица:</p>
+                            <div className="conjugation-grid">
+                                {["Εγώ", "Εσύ", "Αυτός/Αυτή/Αυτό", "Εμείς", "Εσείς", "Αυτοί/Αυτές/Αυτά"].map((person) => (
+                                    <div key={person} className="person-input">
+                                        <label>{person}</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Введите форму..."
+                                            value={userConjugations[person] || ""}
+                                            onChange={(e) => handleConjugationChange(person, e.target.value)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="training-controls">
+                                <button className="back-button" onClick={returnToMenu}>
+                                    Меню
+                                </button>
+                                <button className="start-button" onClick={checkConjugations}>
+                                    Проверить
+                                </button>
+                                <button className="refresh-button" onClick={nextVerb}>
+                                    Следующий глагол
+                                </button>
+                            </div>
+                            {feedback && (
+                                <div className="feedback">
+                                    {feedback.map((item) => (
+                                        <div
+                                            key={item.person}
+                                            className={`feedback-item ${item.correct ? "correct" : "incorrect"}`}
+                                        >
+                                            {item.person}: {item.correct ? "✅ Верно" : `❌ Неверно (Правильно: ${item.correctAnswer})`}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
+</body>
+</html>
