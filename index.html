@@ -269,7 +269,8 @@
 
                 const newFeedback = Object.keys(correctConjugations).map((person) => ({
                     person,
-                    correct: (userConjugations[person] || "").trim() === correctConjugations[person],
+                    // 4. Приведение обеих строк к нижнему регистру для корректного сравнения
+                    correct: (userConjugations[person] || "").trim().toLowerCase() === correctConjugations[person].toLowerCase(),
                     correctAnswer: correctConjugations[person],
                 }));
 
