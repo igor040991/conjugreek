@@ -201,6 +201,9 @@
             const [userConjugations, setUserConjugations] = React.useState({});
             const [feedback, setFeedback] = React.useState(null);
 
+            // 1. Создаем реф для секции обратной связи
+            const feedbackRef = React.useRef(null);
+
             const categories = [
                 { value: "1st_conjugation", label: "1-е спряжение (активный залог)" },
                 { value: "2nd_conjugation", label: "2-е спряжение (средне-пассивный залог)" },
@@ -312,6 +315,13 @@
             const selectedCategoryObj = categories.find(c => c.value === selectedCategory) || {label: ""};
             const selectedTenseObj = tenses.find(t => t.value === selectedTense) || {label: ""};
 
+            // 2. Добавляем useEffect для прокрутки к feedback при его обновлении
+            React.useEffect(() => {
+                if (feedback && feedbackRef.current) {
+                    feedbackRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, [feedback]);
+
             return (
                 <div>
                     {/* Навигация */}
@@ -405,7 +415,8 @@
                                 </button>
                             </div>
                             {feedback && (
-                                <div className="feedback">
+                                /* 3. Присваиваем реф секции обратной связи */
+                                <div className="feedback" ref={feedbackRef}>
                                     {feedback.map((item) => (
                                         <div
                                             key={item.person}
@@ -421,8 +432,7 @@
                 </div>
             );
         }
-
-        ReactDOM.render(<App />, document.getElementById("root"));
-    </script>
-</body>
+            ReactDOM.render(<App />, document.getElementById("root"));
+        </script>
+    </body>
 </html>
