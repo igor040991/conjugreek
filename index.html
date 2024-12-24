@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- 1. Метатег для мобильных устройств -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <meta charset="UTF-8">
     <title>Greek Verb Conjugation Trainer</title>
+    <!-- Подключение React, ReactDOM, Babel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
     <style>
+        /* Основные стили */
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
@@ -14,6 +19,8 @@
             padding: 20px;
             background-color: #f4f4f4;
             line-height: 1.6;
+            /* 2. Увеличим немного базовый размер шрифта */
+            font-size: 16px;
         }
         .menu-container, .training-container {
             background-color: white;
@@ -63,6 +70,7 @@
             font-weight: bold;
         }
         .conjugation-grid {
+            /* Было: display: grid; grid-template-columns: 1fr 1fr; */
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
@@ -80,6 +88,8 @@
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            /* Сделаем текст чуть крупнее для удобства на мобильных */
+            font-size: 1em;
         }
         .feedback {
             margin-top: 15px;
@@ -145,6 +155,37 @@
             font-size: 0.9em;
             color: #555;
             margin-top: 10px;
+        }
+
+        /* 3. Медиа-запросы для мобильных устройств */
+        @media (max-width: 600px) {
+            body {
+                /* Увеличим отступы и шрифт, чтобы удобнее было работать на телефоне */
+                padding: 10px;
+                font-size: 18px;
+            }
+
+            /* Ссылки навигации в одну колонку */
+            .top-nav ul {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            /* Меню и тренинг на всю ширину экрана */
+            .menu-container, .training-container {
+                padding: 15px;
+            }
+
+            /* Сетка становится одноколоночной, чтобы не было горизонтального скролла */
+            .conjugation-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            /* Увеличим отступы между полями ввода */
+            .person-input {
+                margin-bottom: 15px;
+            }
         }
     </style>
 </head>
@@ -272,6 +313,7 @@
 
             return (
                 <div>
+                    {/* Навигация */}
                     <div className="top-nav">
                         <ul>
                             <li><a href="#" onClick={(e) => {e.preventDefault(); returnToMenu();}}>Главная</a></li>
@@ -282,6 +324,7 @@
                         </ul>
                     </div>
 
+                    {/* Если глагол не выбран — меню */}
                     {!currentVerb ? (
                         <div className="menu-container">
                             <h1>Greek Verb Conjugation Trainer</h1>
@@ -303,7 +346,7 @@
                                         </option>
                                     ))}
                                 </select>
-                                <div className="note">Например, 1-е спряжение - обычно активный залог, 2-е - средне-пассивный и т.д.</div>
+                                <div className="note">Например, 1-е спряжение — обычно активный залог, 2-е — средне-пассивный и т.д.</div>
                             </div>
                             <div className="dropdown">
                                 <label>Выберите время:</label>
@@ -318,7 +361,7 @@
                                         </option>
                                     ))}
                                 </select>
-                                <div className="note">Например, аорист - однократное прошедшее действие.</div>
+                                <div className="note">Например, аорист — однократное прошедшее действие.</div>
                             </div>
                             <button
                                 className="start-button"
@@ -329,6 +372,7 @@
                             </button>
                         </div>
                     ) : (
+                        /* Если глагол выбран — тренировка */
                         <div className="training-container">
                             <div className="verb-info">
                                 Глагол: {currentVerb}<br />
